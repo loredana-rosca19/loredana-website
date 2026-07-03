@@ -68,4 +68,76 @@
     }
   });
 
+  /* ---- COOKIE CONSENT ---- */
+  const cookieBanner = document.getElementById('cookieBanner');
+  const cookieModal = document.getElementById('cookieModal');
+  const CONSENT_KEY = 'lr-cookie-consent';
+
+  function getConsent() {
+    try { return JSON.parse(localStorage.getItem(CONSENT_KEY)); } catch (e) { return null; }
+  }
+  function saveConsent(obj) {
+    try { localStorage.setItem(CONSENT_KEY, JSON.stringify(obj)); } catch (e) {}
+    applyConsent(obj);
+  }
+  function applyConsent(obj) {
+    if (obj && obj.statistics) {
+      /* Consimțământ pentru statistici acordat.
+         Aici poți încărca scripturile de analiză (ex. Google Analytics),
+         DOAR după acest consimțământ. */
+    }
+  }
+
+  function showBanner() {
+    if (!cookieBanner) return;
+    cookieBanner.hidden = false;
+    requestAnimationFrame(() => cookieBanner.classList.add('show'));
+  }
+  function hideBanner() {
+    if (!cookieBanner) return;
+    cookieBanner.classList.remove('show');
+    setTimeout(() => { cookieBanner.hidden = true; }, 320);
+  }
+  function openModal() {
+    if (!cookieModal) return;
+    const c = getConsent();
+    const stat = document.getElementById('cookieStatistics');
+    if (stat) stat.checked = !!(c && c.statistics);
+    cookieModal.hidden = false;
+    requestAnimationFrame(() => cookieModal.classList.add('show'));
+  }
+  function closeModal() {
+    if (!cookieModal) return;
+    cookieModal.classList.remove('show');
+    setTimeout(() => { cookieModal.hidden = true; }, 280);
+  }
+
+  if (cookieBanner || cookieModal) {
+    const consent = getConsent();
+    if (!consent) { showBanner(); } else { applyConsent(consent); }
+
+    const acceptAll = () => { saveConsent({ necessary: true, statistics: true }); hideBanner(); closeModal(); };
+    const onlyNecessary = () => { saveConsent({ necessary: true, statistics: false }); hideBanner(); closeModal(); };
+
+    const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+
+    bind('cookieAccept', acceptAll);
+    bind('cookieAcceptAll2', acceptAll);
+    bind('cookieReject', onlyNecessary);
+    bind('cookieSettings', (e) => { e.preventDefault(); openModal(); });
+    bind('cookieSettingsLink', (e) => { e.preventDefault(); openModal(); });
+    bind('cookieSettingsLink2', (e) => { e.preventDefault(); openModal(); });
+    bind('cookieSavePrefs', () => {
+      const stat = document.getElementById('cookieStatistics');
+      saveConsent({ necessary: true, statistics: !!(stat && stat.checked) });
+      hideBanner(); closeModal();
+    });
+
+    document.querySelectorAll('[data-cookie-close]').forEach(el =>
+      el.addEventListener('click', closeModal));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && cookieModal && !cookieModal.hidden) closeModal();
+    });
+  }
+
 })();
